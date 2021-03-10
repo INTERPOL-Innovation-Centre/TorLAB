@@ -1,0 +1,86 @@
+Large setup
+
+SD Card		label	Mac address		IP address	comments
+Kingston 16GB	a	b8:27:eb:8b:1c:b2	192.168.1.130	pi-1 B+ large size net
+Kingston 16GB	b	b8:27:eb:68:a8:e7	192.168.1.131	pi-1 B+ large size net
+Kingston 16GB	c	b8:27:eb:82:56:22	192.168.1.132	pi-1 B+ large size net
+Kingston 16GB	d	b8:27:eb:6a:e6:07	192.168.1.133	pi-1 B+ large size net
+Kingston 16GB	e	b8:27:eb:a1:38:be	192.168.1.134	pi-1 B+ large size net
+Kingston 16GB	f	b8:27:eb:f7:40:19	192.168.1.135	pi-1 B+ large size net
+Kingston 16GB	g	b8:27:eb:92:6f:6d	192.168.1.136	pi-1 B+ large size net client
+
+Kingston 16GB	h	b8:27:eb:99:dd:a5	192.168.1.137	pi-1 B+ medium and large size net
+Kingston 16GB	i	b8:27:eb:9e:3d:cc	192.168.1.138	pi-1 B+ medium and large size net
+Kingston 16GB	j	b8:27:eb:15:86:4d	192.168.1.139	pi-1 B+ medium and large size net
+Kingston 16GB	k	b8:27:eb:a2:2b:82	192.168.1.140	pi-1 B+ medium and large size net
+Kingston 16GB	l	b8:27:eb:5a:21:cc	192.168.1.141	pi-1 B+ medium and large size net
+Kingston 16GB	m	b8:27:eb:09:d5:09	192.168.1.142	pi-1 B+ medium and large size net
+Kingston 16GB	n	b8:27:eb:ed:79:3a	192.168.1.143	pi-1 B+ medium and large size net client
+
+Kingston 16GB	o	b8:27:eb:b3:b4:7a	192.168.1.144	pi-1 B+ large size net
+Kingston 16GB	p	b8:27:eb:e0:1c:16	192.168.1.145	pi-1 B+ large size net
+Kingston 16GB	q	b8:27:eb:ff:9f:80	192.168.1.146	pi-1 B+ large size net
+Kingston 16GB	r	b8:27:eb:fe:d8:6b	192.168.1.147	pi-1 B+ large size net
+Kingston 16GB	s	B8:27:EB:03:82:D8	192.168.1.148	pi-2 large size net torlab, bitcoind, market, wallet & explorer
+Kingston 16GB	t	B8:27:EB:C2:FD:78	192.168.1.149	pi-2 large size net torlab & forum
+Kingston 16GB	u	b8:27:eb:18:5a:f7	192.168.1.150	pi-1 B+ large size net client
+
+
+Medium setup
+ 
+a             192.168.1.101           B8:27:EB:24:58:0C 
+b             192.168.1.102           B8:27:EB:BF:9E:7D 
+c             192.168.1.103           B8:27:EB:8F:73:01 
+d             192.168.1.104           B8:27:EB:7F:35:02 
+e             192.168.1.105           B8:27:EB:37:DF:E7 
+f             192.168.1.106           B8:27:EB:C4:BA:08 
+g             192.168.1.107           B8:27:EB:B9:17:07 
+h             192.168.1.108           B8:27:EB:BD:72:41 
+ 
+n             192.168.1.109           B8:27:EB:E5:4B:94 
+o             192.168.1.110           B8:27:EB:65:0B:8A 
+p             192.168.1.111           B8:27:EB:DC:A1:57 
+q             192.168.1.112           B8:27:EB:5B:87:F3 
+r             192.168.1.113           B8:27:EB:AE:4E:3C 
+s             192.168.1.114           B8:27:EB:D0:6D:38 
+t             192.168.1.115           B8:27:EB:D1:BB:C4 
+u             192.168.1.116           B8:27:EB:A1:53:79 
+
+
+
+
+Used for various tests
+SD Card		label	Mac address		IP address	comments
+Raspberry 8GB	0	b8:27:eb:29:dd:4b	192.168.1.100	durian   pi-1 B old small torlab, bitcoind & bfgminer & explorer
+Raspberry 8GB	1	b8:27:eb:a9:64:7c	192.168.1.101	longan   pi-1 B old small torlab, bitcoind server & client & market & wallet
+Raspberry 8GB	2	b8:27:eb:1b:0b:62	192.168.1.102	rambutan pi-1 B old small torlab, bitcoind & forum
+
+Sandisk 15.9GB	3	verbatim copy of {t,s) after the training, but the second partition shrunk by about 600M using Gparted Live
+Kingston 15.6GB	/s/	verbatim copy of s after the training, but the second partition shrunk by about 600M using Gparted Live
+Kingston 15.6GB	/t/	verbatim copy of t after the training, but the second partition shrunk by about 600M using Gparted Live
+
+Sandisk 15.9GB	4	b8:27:eb:29:dd:4b	192.168.1.2	pieter	Operating Systems
+Sandisk 15.9GB	5	B8:27:EB:25:E6:37	192.168.1.3	hartel	Operating Systems with Leds
+
+Sandisk 15.9GB		b8:27:eb:a9:64:7c			Given to Folmer
+
+Sandisk 16GB	6	?			192.168.1.103	pulasan with BitWasp and testnet3 blockchain
+
+Lexar   4GB	8	?			?		amnesiapi
+Sandisk 4GB	9	?			?		amnesiapi2 with torlab, bitcoind, market, wallet & explorer (SD card broken)
+
+ADATA	8GB		GParted Live
+Sandisk 64GB	z	?			?		amnesiapi
+Sandisk 64GB	-	?			?		pulasan with BitWasp and blockchain (SD card broken)
+longan
+
+Kingston 15.5GB	x	B8:27:EB:BE:1D:54	192.168.1.100	durian pi-1 B+ new small torlab, client
+Kingston 15.5GB	v	B8:27:EB:C7:06:EB	192.168.1.101	longan pi-1 B+ new small torlab, market, wallet, bitcoin, explorer, 4ihf*.onion
+Kingston 15.6GB	y	B8:27:EB:B5:77:04	192.168.1.102	rambutan pi-1 B+ copy of w + bfgminer new small torlab, forum, mxij*.onion
+
+Kingston 15.5GB	w	B8:27:EB:20:D5:73	192.168.1.101	longan   pi-2  stand alone bitcoind server & market & wallet based on copy of s
+Kingston 15.6GB	/w/	verbatim copy of w
+
+
+
+

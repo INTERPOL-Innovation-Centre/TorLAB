@@ -1,0 +1,810 @@
+#!/bin/sh
+
+# check for uninitialised shell variables
+set -u
+
+function small {
+    # the names of all the hosts
+    HOST[0]=durian
+    HOST[1]=longan
+    HOST[2]=rambutan
+    ALL_HOST=`seq 0 2`
+
+    # run directory authorities, relays and exits on all hosts
+    AUTH_HOST=$ALL_HOST
+    EXIT_HOST=$ALL_HOST
+    RELAY_HOST=$ALL_HOST
+
+    # run a Tor client on host 0 and hidden servers on hosts 1 and 2
+    CLIENT_HOST=`seq 0 0`
+    SERVER_HOST=`seq 1 2`
+
+    TORRC_DIR=torrc-small
+    BACKUP_DIR=backup-small
+}
+
+function medium {
+    # the names of all the hosts
+    HOST[0]=a
+    HOST[1]=b
+    HOST[2]=c
+    HOST[3]=d
+    HOST[4]=e
+    HOST[5]=f
+    HOST[6]=g
+    HOST[7]=h
+
+    HOST[13]=n
+    HOST[14]=o
+    HOST[15]=p
+    HOST[16]=q
+    HOST[17]=r
+    HOST[18]=s
+    HOST[19]=t
+    HOST[20]=u
+
+    ALL_HOST="`seq 0 7` `seq 13 20`"
+
+    # run all nodes on different hosts
+    AUTH_HOST=`seq 0 2`
+    CLIENT_HOST="6 13 20"
+    EXIT_HOST="`seq 3 5` `seq 14 15`"
+    RELAY_HOST="7 `seq 16 17`"
+    SERVER_HOST="`seq 18 19`"
+
+    TORRC_DIR=torrc-medium
+    BACKUP_DIR=backup-medium
+}
+
+function large {
+    # the names of all the hosts
+    HOST[0]=a
+    HOST[1]=b
+    HOST[2]=c
+    HOST[3]=d
+    HOST[4]=e
+    HOST[5]=f
+    HOST[6]=g
+    HOST[7]=h
+    HOST[8]=i
+    HOST[9]=j
+    HOST[10]=k
+    HOST[11]=l
+    HOST[12]=m
+    HOST[13]=n
+    HOST[14]=o
+    HOST[15]=p
+    HOST[16]=q
+    HOST[17]=r
+    HOST[18]=s
+    HOST[19]=t
+    HOST[20]=u
+    ALL_HOST=`seq 0 20`
+
+    # run all nodes on different hosts
+    AUTH_HOST=`seq 0 2`
+    CLIENT_HOST="6 13 20"
+    EXIT_HOST="`seq 3 5` `seq 14 15`"
+    RELAY_HOST="`seq 7 10` `seq 16 17`"
+    SERVER_HOST="`seq 11 12` `seq 18 19`"
+
+    TORRC_DIR=torrc-large
+    BACKUP_DIR=backup-large
+}
+
+function common {
+    ROUT[0]=auth   ; SEL_HOST[0]=$AUTH_HOST
+    ROUT[1]=client ; SEL_HOST[1]=$CLIENT_HOST
+    ROUT[2]=exit   ; SEL_HOST[2]=$EXIT_HOST
+    ROUT[3]=relay  ; SEL_HOST[3]=$RELAY_HOST
+    ROUT[4]=server ; SEL_HOST[4]=$SERVER_HOST
+
+    ALL_ROUT=`seq 0 4`
+
+    SOCKS_PORT=9013
+    SERVER_PORT=8080
+
+    # directory structure on each host:
+    #     /home/pi/torlab/{auth, client, exit, server}/
+    #     /home/pi/torlab/auth/keys
+    #     /home/pi/torlab/server/hidden
+    HOME=/home/pi
+    BASE=torlab
+    AUTH_DIR=$BASE/${ROUT[0]}
+    KEY_DIR=$AUTH_DIR/keys
+
+    # initialise the IP address and OR ports of all hosts
+    for h in $ALL_HOST
+    do
+        ADDR[h]=`sed -n -e "s/\([0-9][0-9]*\.[0-9][0-9]*\.[0-9\.]*\)[	 ]*${HOST[h]}$/\1/p" </etc/hosts`
+        OR_PORT[h]=`expr 5000 + $h`
+        CTRL_PORT[h]=9051
+    done
+
+    # initialise the DIR of authorities
+    for h in $AUTH_HOST
+    do
+        DIR_PORT[h]=`expr 7000 + $h`
+    done
+}
+
+# ensure that scripts can login to the pi's by typing the passwords just once
+function sshkeys {
+    local h
+    echo "torlab: installing sshkeys"
+    for h in $ALL_HOST
+    do
+        cat /Users/pieter/.ssh/id_rsa.pub | ssh pi@${HOST[h]} 'mkdir -m700 -p .ssh; cat > .ssh/authorized_keys'
+    done
+}
+
+# install tools and clean up WARNING: THIS DOES NOT WORK YET
+function install {
+    local h LOG
+    echo "torlab: installing tools"
+    for h in $ALL_HOST
+    do
+        LOG[h]="install_${HOST[h]}.log"
+        echo ${LOG[h]}
+        cp /dev/null ${LOG[h]}
+    done
+    for h in $ALL_HOST
+    do
+        ssh pi@${HOST[h]} " \
+            sudo apt-get -V update >> ${LOG[h]}" &
+    done
+    wait
+    for h in $ALL_HOST
+    do
+        ssh pi@${HOST[h]} " \
+            sudo apt-get -V upgrade >> ${LOG[h]}" &
+    done
+    wait
+    for h in $ALL_HOST
+    do
+        ssh pi@${HOST[h]} " \
+            sudo apt-get -V install iftop >> ${LOG[h]}" &
+    done
+    wait
+    for h in $ALL_HOST
+    do
+        ssh pi@${HOST[h]} " \
+            sudo apt-get -V autoclean >> ${LOG[h]}" &
+    done
+    wait
+}
+
+# create a tar ball by way of backup of the whole directory structure on all hosts
+# you may want to remove the log files first to make the backups smaller
+function backup {
+    local h TAR DATE
+    DATE=`date "+%Y-%m-%d_%H.%M"`
+    echo "torlab: making backups $DATE in $BACKUP_DIR"
+    for h in $ALL_HOST
+    do
+        TAR="tor_${HOST[h]}_${DATE}.tar"
+        ssh pi@${HOST[h]} " \
+           tar -cf $TAR $BASE " &
+    done
+    wait
+    for h in $ALL_HOST
+    do
+        TAR="tor_${HOST[h]}_${DATE}.tar"
+        mkdir -p $BACKUP_DIR
+        scp -q pi@${HOST[h]}:$TAR $BACKUP_DIR/$TAR &
+    done
+    wait
+    for h in $ALL_HOST
+    do
+        TAR="tor_${HOST[h]}_${DATE}.tar"
+        ssh pi@${HOST[h]} " \
+           rm $TAR " &
+    done
+    wait
+}
+
+# restore a tar ball 
+# the first argument is the name of tar file and the second the name of the machine
+function restore {
+    local h TAR
+    echo "torlab: restoring backup $1 on machine $2"
+    TAR=`basename $1`
+    scp $1 pi@$2:$TAR
+    ssh pi@$2 " \
+       if [ -e $BASE ] ; then
+           echo $BASE already exists ;
+       else
+           tar -xf $TAR
+       fi"
+}
+
+# deny most of the permissions
+function permissions {
+    local h
+    echo "torlab: restricting permissions of user pi"
+    for h in $ALL_HOST
+    do
+        ssh pi@${HOST[h]} " \
+            chmod -R go-rwx *" &
+    done
+    wait
+}
+
+# set the time on each host to the time of the current machine
+function synch {
+    local h DATE
+    DATE=`date`
+    echo "torlab: synching clocks to $DATE"
+    for h in $ALL_HOST
+    do
+        ssh pi@${HOST[h]} " \
+            sudo date -s \"$DATE\"" &
+    done
+    wait
+}
+
+# remove the directory structure on all hosts
+function cleanall {
+    local h
+    echo "torlab: cleaning out the $BASE directories"
+    for h in $ALL_HOST
+    do
+        ssh pi@${HOST[h]} " \
+             /bin/rm -rf $BASE "
+    done
+}
+
+# remove the logs on all hosts
+function rmlogs {
+    local h
+    echo "torlab: removing the backups in the $HOME and the log files from the $BASE directories"
+    set -x
+    for h in $ALL_HOST
+    do
+        ssh pi@${HOST[h]} " \
+            /bin/rm -f tor_*2015*.tar* $BASE/*/*.log " &
+    done
+    wait
+}
+
+# create the directory structure on all hosts
+function setup {
+    local r h
+    echo "torlab: creating the directory structures"
+    for r in $ALL_ROUT
+    do
+        for h in ${SEL_HOST[r]}
+        do
+            ssh pi@${HOST[h]} " \
+                mkdir -p $BASE/${ROUT[r]}"
+            case ${ROUT[r]} in
+auth)           ssh pi@${HOST[h]} " \
+                    mkdir -p $BASE/${ROUT[r]}/keys" ;;
+server)         ssh pi@${HOST[h]} " \
+                    mkdir -p $BASE/${ROUT[r]}/hidden" ;;
+*)          ;;
+            esac
+        done
+    done
+}
+
+# create the keys and certificates in the key directory on the authorities
+# the argument should be one of create or rotate
+function authorities {
+    local h
+    case $1 in
+create)  echo "torlab: creating the directory authority certificates and identity keys"
+         what=" --create-identity-key " ;;
+*)       echo "torlab: rotating the directory authority certificates"
+         what=" " ;;
+    esac
+    for h in $AUTH_HOST
+    do
+        ssh pi@${HOST[h]} " \
+            echo Interpol | tor-gencert \
+                --passphrase-fd 0 \
+                $what \
+                -i $KEY_DIR/authority_identity_key \
+                -s $KEY_DIR/authority_signing_key \
+                -c $KEY_DIR/authority_certificate \
+                -m 12 -a ${ADDR[h]}:${DIR_PORT[h]}" &
+    done
+    wait
+}
+
+# create the keys and fingerprints for all the onion routers
+function routers {
+    local r h DIR NM
+    echo "torlab: creating the onion keys for all routers"
+    for r in $ALL_ROUT
+    do
+        DIR=$HOME/$BASE/${ROUT[r]}
+        for h in ${SEL_HOST[r]}
+        do
+            NM=${ROUT[r]}${HOST[h]}
+            ssh pi@${HOST[h]} " \
+                tor --quiet \
+                    -f /dev/null \
+                    --ignore-missing-torrc \
+                    --Nickname $NM \
+                    --OrPort 1 \
+                    --DataDirectory $DIR \
+                    --list-fingerprint" &
+        done
+        wait
+    done
+}
+
+# generate the common part of the torrc file
+# this function assumes that the shell variables h, r, and DIR are set correctly!
+function common_torrc {
+    local i NM
+    NM=${ROUT[r]}${HOST[h]}
+    echo "\
+TestingTorNetwork 1
+DataDirectory $DIR
+RunAsDaemon 1
+ConnLimit 60
+Nickname ${NM}
+ShutdownWaitLength 0
+PidFile $DIR/pid
+Log info file $DIR/info.log
+Log notice file $DIR/notice.log
+# Log debug file $DIR/debug.log
+ProtocolWarnings 1
+SafeLogging 0
+DisableDebuggerAttachment 0
+ControlPort ${CTRL_PORT[h]}
+"
+    CTRL_PORT[h]=`expr ${CTRL_PORT[h]} + 1`
+
+    # Collect the fingerprints and the v3ident of the directory authorities
+    for i in $AUTH_HOST
+    do
+        V3IDENT[i]=`ssh pi@${HOST[i]} " \
+            fgrep fingerprint $KEY_DIR/authority_certificate" | sed -n -e 's/fingerprint *\([0-9A-F]*\)/\1/p'`
+        NICK[i]=`ssh pi@${HOST[i]} " \
+            cat $AUTH_DIR/fingerprint" | sed -n -e 's/\([a-zA-Z0-9]*\)[  ][  ]*\([0-9A-F]*\)/\1/p'`
+        FINGER[i]=`ssh pi@${HOST[i]} " \
+            cat $AUTH_DIR/fingerprint" | sed -n -e 's/\([a-zA-Z0-9]*\)[  ][  ]*\([0-9A-F]*\)/\2/p'`
+        echo "\
+DirAuthority ${NICK[i]} orport=${OR_PORT[i]} no-v2 v3ident=${V3IDENT[i]} ${ADDR[i]}:${DIR_PORT[i]} ${FINGER[i]}"
+    done
+}
+
+# generate the authority specific part of the torrc file
+# the first argument of the function is the OrPort the second the DirPort
+function auth_torrc {
+echo "\
+SocksPort 0
+OrPort $1
+DirPort $2
+Address ${ADDR[h]}
+TestingServerDownloadSchedule 10, 2, 2, 4, 4, 8, 13, 18, 25, 40, 60
+
+ExitPolicy reject 127.0.0.0/8:*
+
+AuthoritativeDirectory 1
+V3AuthoritativeDirectory 1
+ContactInfo pieter.hartel@utwente.nl
+ExitPolicy reject *:*
+TestingV3AuthInitialVotingInterval 300
+TestingV3AuthInitialVoteDelay 2
+TestingV3AuthInitialDistDelay 2
+TestingV3AuthVotingStartOffset 0
+
+TestingDirAuthVoteGuard *
+"
+}
+
+# generate the client specific part of the torrc file
+function client_torrc {
+echo "\
+# Client has no OrPort
+
+SocksPort $SOCKS_PORT
+SocksListenAddress 0.0.0.0
+TestingClientDownloadSchedule 10, 2, 2, 4, 4, 8, 13, 18, 25, 40, 60
+"
+}
+
+# generate the exit node specific part of the torrc file
+# the argument is the OrPort and h is the host
+function exit_torrc {
+echo "\
+SocksPort 0
+OrPort $1
+Address ${ADDR[h]}
+TestingServerDownloadSchedule 10, 2, 2, 4, 4, 8, 13, 18, 25, 40, 60
+
+ExitPolicy accept *:*
+"
+}
+
+# generate the relay node specific part of the torrc file
+# the argument is the OrPort and h is the host
+function relay_torrc {
+echo "\
+SocksPort 0
+OrPort $1
+Address ${ADDR[h]}
+TestingServerDownloadSchedule 10, 2, 2, 4, 4, 8, 13, 18, 25, 40, 60
+
+ExitPolicy reject *:*
+"
+}
+
+# generate the server node specific part of the torrc file
+# the argument is the OrPort and h is the host
+function server_torrc {
+echo "\
+SocksPort 0
+OrPort $1
+Address ${ADDR[h]}
+TestingServerDownloadSchedule 10, 2, 2, 4, 4, 8, 13, 18, 25, 40, 60
+
+HiddenServiceDir $HOME/$BASE/server/hidden
+HiddenServicePort $SERVER_PORT 127.0.0.1:80
+
+ExitPolicy reject *:*
+"
+}
+
+# generate the torrc file for all routers. A copy will be stored in the local torrc directory for ease of inspection
+function torrc {
+    local r h TMP DIR
+    mkdir -p $TORRC_DIR
+    /bin/rm -rf $TORRC_DIR/*_*.torrc
+    echo "torlab: creating the torrc files"
+    for r in $ALL_ROUT
+    do
+        for h in ${SEL_HOST[r]}
+        do
+            TMP="$TORRC_DIR/${HOST[h]}_${ROUT[r]}.torrc"
+            DIR=$HOME/$BASE/${ROUT[r]}
+            common_torrc > $TMP;
+            case ${ROUT[r]} in
+auth)           auth_torrc   ${OR_PORT[h]} ${DIR_PORT[h]} >> $TMP;;
+client)         client_torrc  >> $TMP;;
+exit)           exit_torrc   `expr ${OR_PORT[h]} + 100` >> $TMP;;
+relay)          relay_torrc  `expr ${OR_PORT[h]} + 200` >> $TMP;;
+server)         server_torrc `expr ${OR_PORT[h]} + 300` >> $TMP;;
+*)              ;;
+            esac
+            scp -q $TMP pi@${HOST[h]}:$DIR/torrc &
+        done
+        wait
+    done
+}
+
+# ask tor to check that the torrc files are ok
+function verify {
+    local r h DIR
+    for r in $ALL_ROUT
+    do
+        DIR=$BASE/${ROUT[r]}
+        for h in ${SEL_HOST[r]}
+        do
+            ssh pi@${HOST[h]} "\
+                tor --verify-config -f $DIR/torrc"
+        done
+    done
+}
+
+# start the routers
+function start {
+    local r h DIR
+    set -x
+    for r in $ALL_ROUT
+    do
+        DIR=$HOME/$BASE/${ROUT[r]}
+        for h in ${SEL_HOST[r]}
+        do
+            ssh pi@${HOST[h]} "\
+                tor -f $DIR/torrc"
+        done
+    done
+}
+
+# make a few tests:
+#   (1) check the web server on all hosts
+#   (2) check the hidden servers on the server hosts
+function test {
+    local c s ONION
+    DIR=$BASE/server/hidden
+    for s in $SERVER_HOST
+        do
+            set -x
+            ONION[s]=`ssh pi@${HOST[s]} "\
+                cat $DIR/hostname"`
+            set +x
+    done
+    for c in $CLIENT_HOST
+    do
+        for s in $ALL_HOST
+        do
+            # set -x
+            echo "curl --socks4a ${ADDR[c]}:$SOCKS_PORT http://${ADDR[s]}/bigfile.php | wc -l"
+            # set +x
+        done
+    done
+    for c in $CLIENT_HOST
+        do
+        for s in $SERVER_HOST
+        do
+            set -x
+            curl --socks4a ${ADDR[c]}:$SOCKS_PORT http://${ONION[s]}:$SERVER_PORT/bigfile.php | wc -l
+            set +x
+        done
+    done
+}
+
+# stop all routers. they can be started later and will pick up where they left off.
+function stop {
+    local r h TMP DIR
+    for r in $ALL_ROUT
+    do
+        for h in ${SEL_HOST[r]}
+        do
+            echo "torlab: stopping tor ${ROUT[r]}${HOST[h]}"
+            PID=$BASE/${ROUT[r]}/pid
+            ssh pi@${HOST[h]} '\
+                kill -SIGTERM `'cat $PID'`' &
+        done
+    done
+    wait
+}
+
+# restart tor on all routers, re-reading the torrc files
+function restart {
+    local r h TMP DIR
+    for r in $ALL_ROUT
+    do
+        for h in ${SEL_HOST[r]}
+        do
+            echo "torlab: restarting tor ${ROUT[r]}${HOST[h]}"
+            PID=$BASE/${ROUT[r]}/pid
+            ssh pi@${HOST[h]} '\
+                kill -HUP `'cat $PID'`' &
+        done
+        wait
+    done
+}
+
+# display the configuration of the tor network
+function config {
+    local r h
+    for h in $ALL_HOST
+    do
+        ssh pi@${HOST[h]} "\
+            (hostname; sudo ifconfig eth0 | sed -n -e 's/.*HWaddr *\(.*\)/\1/p' -e 's/.*addr: *\(.*\) Bcast.*/\1/p') | sed 'N;N;s/\n/\t/g'" &
+    done
+    wait
+    for h in $AUTH_HOST
+    do
+        echo "[${HOST[h]} ip=${ADDR[h]} dir=${DIR_PORT[h]}]"
+    done
+    for r in $ALL_ROUT
+    do
+        TXT="${ROUT[r]} on"
+        for h in ${SEL_HOST[r]}
+        do
+            TMP="$TORRC_DIR/${HOST[h]}_${ROUT[r]}.torrc"
+            TXT="$TXT [${HOST[h]} ip=${ADDR[h]}`sed -n -e 's/ControlPort[ ]*\([0-9]*\)/ ctr=\1/p' -e 's/SocksPort[ ]*\([0-9][0-9][0-9]*\)/ sks=\1/p'<$TMP`] "
+        done
+        echo $TXT
+    done
+}
+
+# run netstat to show the tor TCP streams on all hosts
+function do_netstat {
+    local h
+    for h in $ALL_HOST
+    do
+        echo "torlab: netstat on ${HOST[h]}"
+        ssh pi@${HOST[h]} '\
+            sudo netstat -ntap | grep -e tor -e Proto  '
+    done
+}
+
+# deanonimise by retrieving the fingerprints for each router
+function deanon {
+    local h
+    for r in $ALL_ROUT
+    do
+        for h in ${SEL_HOST[r]}
+        do
+            FP=`ssh pi@${HOST[h]} " \
+                cat $BASE/${ROUT[r]}/fingerprint" | sed -n -e 's/\([a-zA-Z0-9]*\)[  ][  ]*\([0-9A-F]*\)/\2/p'`
+            echo "s/$FP/${ROUT[r]}${HOST[h]}/"
+        done
+    done
+}
+
+# run ps on all hosts to show the status of the tor processes
+function do_ps {
+    local h PID
+    echo "torlab: process status"
+    for r in $ALL_ROUT
+    do
+        for h in ${SEL_HOST[r]}
+        do
+            PID=$BASE/${ROUT[r]}/pid
+            ssh pi@${HOST[h]} '\
+                (hostname; (ps v `'cat $PID'` | grep -e tor)) | sed "N;s/\n/\t/"' &
+        done
+    done
+    wait
+}
+
+# run ls on all hosts
+function do_ls {
+    local h PID
+    for r in $ALL_ROUT
+    do
+        for h in ${SEL_HOST[r]}
+        do
+            PID=$BASE/${ROUT[r]}/pid
+            ssh pi@${HOST[h]} '\
+                hostname; ls -lR *tar*'
+        done
+    done
+}
+
+# run df on all hosts
+function do_df {
+    local h
+    for h in $ALL_HOST
+    do
+        ssh pi@${HOST[h]} '\
+            hostname; df -h; # sudo du -sh /bin /home/pi /home/bitcoin /lib /opt /tmp /usr /usr /var'
+    done
+}
+
+# show the consensus status on the authorities. They should eventually all be the same.
+function consensus {
+    local h
+    for h in $AUTH_HOST
+    do
+        echo "torlab: consensus status on ${HOST[h]}"
+        ssh pi@${HOST[h]} "\
+            curl -silent http://${ADDR[h]}:${DIR_PORT[h]}/tor/status-vote/current/consensus | \
+            sed -n  -e 's/^r \([a-zA-Z0-9]*\).*/\1/p' -e 's/^s \(.*\)/\1/p' | sed 'N;s/\n/\t/' | sort"
+    done
+}
+
+# update the splash page on the clients
+# the argument is the name of the zip file with the contents of the web site
+function splash {
+    local c
+    for c in $CLIENT_HOST
+    do
+        set -x
+        scp -q $1 pi@${HOST[c]}:splash.zip
+        ssh pi@${HOST[c]} ' \
+            cd /var/www ; sudo /bin/rm -rf index.html download; sudo unzip $HOME/splash.zip ' &
+    done
+    wait
+}
+
+# ping the hosts.
+function do_ping {
+    local h
+    for h in $ALL_HOST
+    do
+        ping -c 1 ${HOST[h]}
+    done
+}
+
+# shut down the hosts. Best to stop the routers first!
+function do_shutdown {
+    local h
+    for h in $ALL_HOST
+    do
+        echo "torlab: shutting down ${HOST[h]}"
+        ssh pi@${HOST[h]} "\
+            sudo shutdown -h now" &
+    done
+}
+
+# reboot the hosts. Best to stop the routers first!
+function do_reboot {
+    local h
+    for h in $ALL_HOST
+    do
+        echo "torlab: re-booting ${HOST[h]}"
+        ssh pi@${HOST[h]} "\
+            sudo reboot" &
+    done
+}
+
+# extract the passwd files
+function do_passwd {
+    local h DATE PWD
+    DATE=`date "+%Y-%m-%d_%H.%M"`
+    PWD="password_${DATE}"
+    mkdir -p $PWD
+    echo "torlab: extracting passwd files to directory $PWD"
+    for h in $ALL_HOST
+    do
+        scp -q pi@${HOST[h]}:/etc/passwd $PWD/${HOST[h]}.txt &
+    done
+    wait
+}
+
+# restart the arm displays
+function do_arm {
+    echo "torlab: re-starting arm on all hosts"
+    local h
+    for h in $ALL_HOST
+    do
+        ssh pi@${HOST[h]} '\
+            ps -u pi | sed -n -e "s/ *\([0-9][0-9]*\) tty1.*bash/\1/p" >.arm/pid
+            kill -SIGKILL `cat .arm/pid`' &
+    done
+    wait
+}
+
+function usage {
+    echo "usage: torlab [ arm | authorities | backup | build | cleanall |"
+    echo "                config | consensus | deanon | df | ls | netstat |"
+    echo "                passwd | ping | ps | reboot  | restart | restore tar_file machine | rmlogs |"
+    echo "                rotate | routers | setup | shutdown | splash zip_file | sshkeys |"
+    echo "                permissions | start | stop | synch | test | torrc | verify ]" 
+}
+
+if [ $# -eq 0 ]; then
+    usage
+else
+    case $0 in
+*small)		small ;;
+*large)		large ;;
+*)		medium ;;
+    esac
+    common
+
+    case $1 in
+passwd)         do_passwd ;;
+arm)            do_arm ;;
+install)        install ;;
+sshkeys)        sshkeys ;;
+backup)         backup ;;
+synch)          synch ;;
+cleanall)       cleanall ;;
+rmlogs)         rmlogs ;;
+setup)          setup ;;
+rotate)         authorities rotate ;;
+authorities)    authorities create ;;
+routers)        routers ;;
+torrc)          torrc ;;
+verify)         verify ;;
+deanon)         deanon ;;
+build)          synch
+                cleanall
+                setup
+                authorities create
+                routers
+                torrc
+                verify
+                deanon
+                permissions
+                config ;;
+start)          start ;;
+restart)        restart ;;
+permissions)    permissions ;;
+stop)           stop ;;
+config)         config ;;
+ps)             do_ps ;;
+ls)             do_ls ;;
+df)             do_df ;;
+netstat)        do_netstat ;;
+consensus)      consensus ;;
+test)           test ;;
+ping)           do_ping ;;
+shutdown)       do_shutdown ;;
+reboot)         do_reboot ;;
+restore)        restore $2 $3 ;;
+splash)         splash $2 ;;
+*)              usage ;;
+    esac
+fi
