@@ -1,3 +1,8 @@
+# TorLab Backup
+This is a backup of the original [TorLab repository](https://github.com/dws-pm/TorLAB).
+
+--
+
 # TorLAB
 This repository contains the scripts and disk image files of a private network of TOR nodes.
 
@@ -57,14 +62,7 @@ You can refer to the [instructions](https://raspberry-projects.com/pi/pi-operati
 
 To manage large files in GitHub, please use [GitHub LFS](https://git-lfs.github.com/)<br/> 
 
-Each image is compressed to zip files using [Winrar](https://www.win-rar.com/).<br/>
-Where the zip file exceeds GitHub LFS limit of 2GB, it is split to multiple z files:<br/>
-Node a's SD card image: a_image.zip, a_image.z01, a_image.z02, a_image.z03 <br/>
-Node d's SD card image: d_image.zip, d_image.z01, d_image.z02, d_image.z03, d_image,z04 <br/>
-Node g's SD card image: g_image.zip, g_image.z01, g_image.z02, g_image.z03 <br/>
-Node i's SD card image: i_image.zip, i_image.z01, i_image.z02, i_image.z03 <br/>
-Node n's SD card image: n_image.zip <br/>
-Node u's SD card image: u_image.zip <br/>
+Each image is compressed in the rar format.
 
 ## Linux Machine Shell Script
 The script `torlab-large` is used to start and stop the TOR nodes.
