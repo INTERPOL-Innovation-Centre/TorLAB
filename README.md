@@ -1,10 +1,27 @@
-# TorLab Backup
-This is a backup of the original [TorLab repository](https://github.com/dws-pm/TorLAB).
-
---
-
 # TorLAB
-This repository contains the scripts and disk image files of a private network of TOR nodes.
+This project is a fork of the original [TorLAB repository](https://github.com/dws-pm/TorLAB).
+
+## Authors and contributors
+
+**People**<br>
+ * [SebLKMa - Sebastian Lik-Keung Ma](https://github.com/SebLKMa)<br>
+ * [Syknde - Shun INAGAKI](https://github.com/skynde)<br>
+ * The quick reference guide is credited to Prof. Pieter Hartel, Erwin Middlesch, Christian Karam.<br>
+
+**Organisations**<br>
+ * INTERPOL Cyber Space and New Technologies Laboratory<br>
+ * Dark Web Solutions - [github](https://github.com/dws-pm/) | [web](https://dws.pm/)<br>
+ * [TNO Innovation for life](https://www.tno.nl/en/)<br>
+
+# About
+This repository contains the scripts and disk image files required to create and run a private network of TOR nodes. 
+The disk images correspond to the SD cards required to boot a network of Raspberry Pis.
+This private TOR network is used by the cyberspace and new technologies Lab to simulate TOR and deliver trainings on dark web and virtual assets.
+![Alt text](TorLAB%20-%20AFP%20GETTY%20images.png?raw=true "Title")
+Illustration image of the TorLAB. Source and copyright: [GettyImages](https://www.gettyimages.com/detail/news-photo/devices-to-simulate-cyber-crimes-are-displayed-at-interpol-news-photo/469556866)
+
+# Intent
+With this repository we hope to emulate cooperation in updating and maintaining this simulation environment and transition to virtual machines.
 
 ## Private network
 
@@ -55,7 +72,7 @@ The Roles played by the nodes are:<br/>
 
 
 ## Image Files
-Based on the Roles played by the nodes mentioned above, you can make copies of the 21 SD cards from the provided image files. <br/>
+Based on the Roles played by the nodes mentioned above, you may recreate a set of 21 SD cards from the provided image files. <br/>
 These image files are direct image copies of the RPU SD cards from the nodes a, d, g, n, u, and i. <br/>
 These image files were created using [win32diskimager](https://sourceforge.net/projects/win32diskimager/). <br/>
 You can refer to the [instructions](https://raspberry-projects.com/pi/pi-operating-systems/win32diskimager) provided by win32diskimager.
@@ -70,9 +87,6 @@ The script `torlab-large` is used to start and stop the TOR nodes.
 ![Alt text](torlab-large.JPG?raw=true "Title")
 
 For details of the various arguments this script expects, please refer to its source code.
-
-# Quick Reference
-This quick reference guide is credited to Prof. Pieter Hartel, Erwin Middlesch, Christian Karam.
 
 ## Power-up
 (a)	The laptop should know about the IP addresses of the 21 RPI (labelled a .. u). See for details the file *20150721_Torlab_IP_MAC_SD_config.txt*<br/>
@@ -131,8 +145,3 @@ To stop the tor routers **DO NOT SHUT DOWN UNLESS YOU HAVE STOPPED THE TOR NETWO
 
 To shut down the RPI. **DO NOT POWER OFF UNLESS YOU HAVE SHUT DOWN THE RPIs** <br/>
 `./torlab-large shutdown`
-
-
-
-
-
